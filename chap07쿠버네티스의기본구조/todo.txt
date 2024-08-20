@@ -1,3 +1,2 @@
-0. PV/PVC 부분 마저 정리 - gpt
 1. object 부분 - pod 등의 기본적인 종류는 정리됬고 label 부터 계속
 2. kubernetest network
