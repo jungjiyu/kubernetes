@@ -1,2 +1,2 @@
 1. object 부분 - pod 등의 기본적인 종류는 정리됬고 label 부터 계속
-2. kubernetest network
+2. kubernetest network - docker network 의 docker network ls 에 대한 gpt 설명 부터 계속
