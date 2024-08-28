@@ -1,1 +1,84 @@
+chap08 쿠버네티스 실습환경 구축
+
+--------------------------------------------------------------------------------------
+
+
+8.1 쿠버네티스 설치전 사전준비
+	: 쿠버네티스는 실습환경을 사전 구축한 후에 설치해야한다. 안그럼 설치에 실패할 수도..
+	: (쿠버네티스 클러스터를 구성하기 위한) 사전준비 목록
+		1.  다수의 가상 머신 생성
+			: docker 실습할 때는 가상머신(myserver02) 하나만 사용했는데, (쿠버네티스는 서버가 여러대의 효율적인 사용을 위한 것이므로) 쿠버네티스 실습에서는 여러개의 가상머신을 준비해서 서버가 여러개 있는 것 같은 효과를 낸다
+			: 구축 내역 >>  서버 3대로 쿠버네티스 클러스터 구축
+				(1) 마스터 노드  <-- 1대
+					1. myserver02
+
+				(2) 워커노드 <-- 2대
+					1. myserver03
+					2. myserver04
+				
+			: 실습 절차
+				(1) 가상머신 복제 >> docker 실습에 사용한 가상머신 myserver02를 복재
+					1. myserver02 가상머신 탭 우클릭 , 복제 선택
+					2. 아래와 같이 설정 후 '다음' 클릭
+						(1) 가상머신의 이름 : 각각 myserver03, myserver04 
+						(2) MAC 주소 정책( MAC Address Policy ) >> "모든 네트워크 어댑터의 새 MAC 주소 생성"을 선택
+
+					3. 복제 방식을 '완전한 복제'를 선택 후 'finish' 클릭
+						: 복제된 서버에 접속해보면 hostname 도 myserver02, IP주소도 myserver02의 IP로 진짜 myserver02가 완전 존똑으로 복사된 것을 확인 가능. 복제된 서버를 myserver03, myserver04로써 사용가능하게 하기 위해 다음 추가 설정 과정이 필요
+
+
+		2.  각 가상머신의 설정
+			: 단순 복제된 myserver03, myserver04를 실제로 myserver03, myserver04로써 작동하게 설정
+			: 실습 절차
+				: 각 가상머신 별 IP 설정이 안된 상태라 puTTY 로 접속해서 설정은 불가하고, virtualBox 에서 직접 입력해야됨
+
+				(1) 각 가상머신(myserver02, myserver03, myserver04)의 전원 다 킴
+
+				(2) host name (호스트 이름) 변경 
+					: 설정전엔 죄다 hostname 이 myserver02인 상태
+
+					1.  현재 가상머신의 호스트네임을 새로 설정 >> sudo hostnamectl set-hostname <새로운hostname>
+					    : hostnamectl >> 시스템의 호스트네임을 설정하고 관리하는 명령어
+					    : 그러니까 
+						: myserver03에 접속해서 >> sudo hostnamectl set-hostname myserver03
+						: myserver04에 접속해서 >> sudo hostnamectl set-hostname myserver04
+
+					2. 호스트네임이 제대로 설정됬나 확인 >> cat /etc/hostname 
+					    : /etc/hostname 파일>> 시스템의 호스트네임을 저장하고 있는 파일
+					    : 그러니까 
+						: myserver03에선>>  myserver03 나옴
+						: myserver04에선>>  myserver04 나옴
+
+
+					3. 시스템을 즉시 재부팅 >> sudo reboot now 
+						: 새로운 호스트네임을 시스템에 적용하기 위해선 시스템을 재부팅해야됨
+
+				(2) IP 주소 변경 
+					: 설정 전엔 죄다 IP주소(enp0s3의 inet값)가 10.0.2.4(myserver02의 IP주소)인 상태
+					: 쿠버네티스 클러스터를 구성하기 위해서는 세 가상머신 모드 IP 주소가 달라야되므로, 서로 다른 IP주소를 가지도록 설정
+
+					1. yaml 파일 작성
+						: 교재대로하면 에러나고 이거 참고해서 해야됨>> https://betwe.tistory.com/entry/Ubuntu-netplan-%EC%9D%84-%EC%9D%B4%EC%9A%A9%ED%95%9C-IP-%EB%B3%80%EA%B2%BD
+
+network:
+  ethernets:
+    enp0s3:
+      addresses:
+        - 10.0.2.5/24
+      routes:
+        - to: default
+          via: 10.0.2.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+  version: 2
+
+
+
+					2. 
+					3. 
+
+		3. 네트워크 설정 및 swap 설정
+
+
 
