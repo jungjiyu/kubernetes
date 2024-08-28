@@ -842,16 +842,9 @@ Docker Network 복습
 									(5) ExternalName : DNS 이름을 외부 서비스로 매핑하여 클러스터 내에서 외부 서비스에 접근할 수 있게 함
 
 
-							2. Ingress 인그레스 >> 클러스터 외부에서 내부 서비스로의 HTTP(S) 트래픽을 제어하고 관리하는 리소스	
-								: Service 보다 더 높은 수준의 네트워크 리소스 
-									: Service 리소스를 통해 트래픽을 전달
-										: Service 리소스를 대상으로 동작하며, 여러 Service로의 트래픽을 라우팅
-									:  Service 보다 더 높은 수준 == Ingress가 Service보다 더 세부적이고 복잡한 네트워크 트래픽 관리 기능
-										: Service 는 기본이되는 네트워크 리소스
-										: Ingress는 Service 위에서 동작하는 좀 더 세부적인, 정교한 네트워크 리소스
-
-
-								: 기능
+							2. Ingress 인그레스 >> 클러스터 외부에서 내부 서비스로의 HTTP(S) 트래픽을 Service로 라우팅하는 리소스	
+								: Ingress는 직접적으로 Pod와 상호작용하지 않고, Service를 통해 Pod와 상호작용	
+								:  외부의 트래픽을 받는데, 다음의 기능이 필요한 경우 사용
 									0. HTTP(S) 라우팅 >> 클러스터 외부에서 내부 파드에 접근할 수 있도록 함
 										: URL 경로나 호스트 이름 기반의 외부에서 클러스터로 들어오는 HTTP(s) 트래픽을, 적절한 서비스로 라우팅 시킨다
 										: 단일 외부 IP 주소를 사용해 여러 서비스에 대한 요청을 관리 가능
@@ -861,9 +854,22 @@ Docker Network 복습
 									2. 리버스 프록시 역할 >> 사용자가 지정한 규칙에 따라 트래픽을 각 서비스로 전달 가능
 										: Ingress는 여러 서비스에 대한 접근을 중앙 집중적으로 관리
 
+
+
 								: Ingress 컨트롤러 
 									: Ingress 리소스는 직접적으로 트래픽을 관리하지 않음. Ingress 컨트롤러에 의해 트래픽의 관리가 수행됨
-									: Ingress 리소스에 정의된 규칙에 따라 Ingress 컨트롤러가 트래픽을 적절하게 라우팅한다.
+									: 대표적인 Ingress Controller ) NGINX Ingress Controller, HAProxy, Traefik 	
+
+								; Ingress의 작동 방식
+									1. 트래픽 수신: Ingress Controller는 외부로부터 들어오는 , 호스트 이름이나 경로를 포함하는 HTTP/HTTPS 요청(트래픽)을 수신.
+
+									2. 라우팅 규칙 적용: Ingress Controller가 Ingress 리소스에 정의된 규칙에 따라, 들어온 트래픽을 적절한 "서비스"로 라우팅
+
+									3. 서비스가 최종 전달 : 해당 서비스가 최종적으로 연결된 Pod내의 컨테이너에게 트래픽을 전달
+
+
+
+								
 
 
 
@@ -955,12 +961,37 @@ Docker Network 복습
 
 
 							2. Service >> Pod 접속을 안정적으로 유지하기 위한 기능을 제공하는 오브젝트
-								: Pod 는 언제든 죽거나 재생성될 수 있는 유동적인 오브젝트임에도 안정적인/고정적인 접속을 가능하게 해준다
-								: Pod 와는 달리 사용자가 직접 지우지 않는 한 삭제/재생성되지 않으므로 고정된 접속 정보를 가져 안정적
-								: 각 Pod의 IP로는 외부에서 직접적인 접근이 불가능하지만, 서비스는 이를 가능하게 해준다.
+								: Pod 와는 달리 사용자가 직접 지우지 않는 한 삭제/재생성되지 않는다.
+								: 모든 service 는 클러스터 내에서만 사용 가능한, 고정된 고유한 IP주소인 clusterIP를 가진다
+									: 이 주소로 IP가 가변적인 Pod의 한계를 뛰어 넘는다
+
+									: clusterIP가 cluster 내부에서만 사용 가능하다보니 기본적인 타입의 service로는 클러스터 내부에서의 통신만 가능하지만, 일부 타입의 service 는 외부와의 통신도 가능하다.
+
+
+								: 각 Pod 자체의 IP로는 외부에서 직접적인 접근이 불가능한데, 서비스는 이를 가능하게 해준다.
+
+
+
 								: 하나의 service는 여러개의 Pod와 연결될 수 있다
 									: 여러개의 Pod 와 연결되는 경우 Serive 가 트래픽을 분산하여 Pod 에게 전달해준다. 
 										: 그러니까 (service 오브젝트의 spec 정의 부분의) selector 를 통한 로드밸런싱이 가능
+
+
+								: yml파일에서의 service 용어 tip
+									: 서비스 타입이 달라도, yml 파일에서 공통적으로 등장하는 용어의 의미/역할은 동일
+
+									0. selector 부분 >> 해당 서비스가 어떠한 Pod 와 연결될지를 설정
+										: selector 필드(app)에 라벨을 지정하면, 해당 라벨을 라벨로 가지는 Pod들이 자동으로 이 서비스와 연결된다.
+
+									1.  ports 부분 >> 해당 서비스로 들어온 트래픽을 해당 서비스와 연결된 Pod 내의 어떠한 컨테이너로 라우팅할지 설정
+										(1) port >> 기본 타입(ClusterIp) 서비스가 해당 노드에서 listen 하는 포트번호
+										(2) targetPort >> 해당 노드에서 "port번호"의 포트를 listen하는 서비스로 들어온 트래픽을, (port 번호의 포트를 listen 하는 해당 서비스와) 연결된 Pod 들의 컨테이너 중 어떠한 컨테이너로 최종 포워딩 시킬지 결정. 
+											: 연결된 Pod들의 컨테이너 중 targetPort번호의 포트에서 실행중인 컨테이너에게 포워딩된다.
+
+
+										(3) nodePort >> nodePort 타입 서비스가 (클러스터 전역적으로)모든 노드에서 listen 하는 포트번호
+
+
 
 								: 타입 
 								    : yaml 파일의 type 부분에서 설정 가능
@@ -992,6 +1023,9 @@ Docker Network 복습
 											1. NodePort 서비스에 대해 YAML 파일에 정의함 .
 
 											    : 아래와 같이 정의된다
+												: 요약하자면 >> 각 노드의 kube-proxy가 해당 노드의 "nodePort번호"의 포트를 할당하고 listen하다가, 트래픽이 노드의 nodePort번호의 포트로 들어오면  kube-proxy가 해당 노드 내의 서비스 중 "port번호"의 포트를 listen 하는 서비스에게 전달하고, 이 트래픽을 전달받은 서비스는 바인딩된 Pod 내에서 "targetPort번호"의 포트를 listen 하는 컨테이너에게 최종 전달해준다.
+
+
  
 												type: NodePort
 												ports:
@@ -1398,5 +1432,30 @@ Docker Network 복습
 
 
 		(4) External To Service. 외부와 Service간의 통신 >>
-			: service 네트워크 >> service 가 할당 받는 네트워크 인터페이스
-			:  
+
+			case1. service 리소스 활용 >>  외부에서 들어오는 트래픽을 클러스터 내부의 Service로 라우팅
+			    case (1) Nodeport 타입 서비스 :  클러스터 외부로부터 클러스터 내부의 Pod 으로 트래픽을 받기 위해 사용하는 서비스 유형 
+				: "모든" 각 노드의 kube-proxy가 해당 노드의 "nodePort번호"의 포트를 할당하고 listen하다가, 트래픽이 노드의 nodePort번호의 포트로 들어오면  kube-proxy가 해당 노드 내의 서비스 중 "port번호"의 포트를 listen 하는 서비스에게 전달하고, 이 트래픽을 전달받은 서비스는 바인딩된 Pod 내에서 "targetPort번호"의 포트를 listen 하는 컨테이너에게 최종 전달해준다.
+					: 그러니까 Nodeport 타입 서비스 생성하면 클러스터내의 모든 노드에서 nodePort 번호의 포트가 nodeport 서비스용으로 개방되는거임(이때문에 "해당클러스터내의모든임의의NodeIp:nodeport값" 의 접근이 가능한거임). 그리고 특정 노드의 nodeport 포트로 받은 트래픽은 해당 노드 내의 (특정 서비스와 연결된 Pod의) 특정 컨테이너에게 최종 전달되는거임.
+
+
+			    case (2)  LoadBalancer타입 서비스  : 클라우드 환경에서 외부 로드 밸런서를 생성하여, 외부에서 직접 서비스에 접근할 수 있게 함
+				:  기본적으로는 외부 클라우드 서비스를 사용하여 로드밸런서를 프로비저닝 할 수 있는 경우에만 사용 가능하다.
+					: 베어메탈 환경에서 사용하고 싶다면  metal-lb라는 플러그인을 따로 설치를 해줘야 사용 가능
+
+
+			case2.  Ingress 인그레스 리소스 활용 >>  외부에서 들어오는 HTTP/HTTPS 트래픽을 클러스터 내부의 Service로 라우팅
+				: Ingress는 직접적으로 Pod와 상호작용하지 않고, Service를 통해 Pod와 상호작용
+				:  HTTP 및 HTTPS 트래픽에 대해 외부 접근 관리, 여러 서비스 간의 트래픽을 라우팅하거나, 도메인 이름에 따라 트래픽을 특정 서비스로 보내는 등을 구현해야하는 경우 사용
+
+				: Ingress 컨트롤러 
+					: Ingress 리소스는 직접적으로 트래픽을 관리하지 않음. Ingress 컨트롤러에 의해 트래픽의 관리가 수행됨
+					: 대표적인 Ingress Controller ) NGINX Ingress Controller, HAProxy, Traefik 
+
+				; Ingress의 작동 방식
+					1. 트래픽 수신: Ingress Controller는 외부로부터 들어오는 , 호스트 이름이나 경로를 포함하는 HTTP/HTTPS 요청(트래픽)을 수신.
+
+					2. 라우팅 규칙 적용: Ingress Controller가 Ingress 리소스에 정의된 규칙에 따라, 들어온 트래픽을 적절한 "서비스"로 라우팅
+
+					3. 서비스가 최종 전달 : 해당 서비스가 최종적으로 연결된 Pod내의 컨테이너에게 트래픽을 전달
+
