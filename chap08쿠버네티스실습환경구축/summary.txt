@@ -3,6 +3,28 @@ chap08 쿠버네티스 실습환경 구축
 --------------------------------------------------------------------------------------
 
 
+도메인 네임
+    : 도메인 네임에 대한 IP를 찾기 위해선 호스트는 "해당 호스트의 /etc/hosts 파일" -> "해당 호스트의 로컬 DNS 캐시" -> "해당 호스트가 속한 로컬 네트워크의 로컬 DNS " ->  "퍼블릭 DNS " 순으로 참조하게 된다.
+    : DNS 
+	1. Domain Name System 로써의 DNS >>  도메인 이름과 IP 주소를 매핑하는 시스템
+	2.  Domain Name Server 로써의 DNS  >>   Domain Name System 이 돌아가는 실제 "서버"
+		: 종류 
+			(1) 로컬 DNS : 로컬 네트워크 내에서만 사용 가능한 Domain Name "Server"로, 도메인 네임을 private IP 혹은 public IP 에 바인딩한 정보를 저장한다.
+			(2) 퍼블릭 DNS : 전세계 범위에서 사용되는 Domain Name "Server"로, 도메인 네임을  public IP에 바인딩한 정보를 저장한다
+
+    : /etc/hosts >> IP 와 도메인 네임을 바인딩해놓은 "host내"의 "정적" "파일"
+	: 사용자가 직접 정의/수정 가능
+	: 도메인 네임에 대한 IP를 찾기 위해 host 는 가장 먼저 이 파일을 참조한다
+
+    : 로컬 DNS 캐시 >> 해당 host 가 DNS 에 질의한 내역을 저장해놓은 "host 내"의 "동적인" "메모리/저장소"
+
+
+
+
+
+
+
+
 8.1 쿠버네티스 설치전 사전준비
 	: 쿠버네티스는 실습환경을 사전 구축한 후에 설치해야한다. 안그럼 설치에 실패할 수도..
 	: (쿠버네티스 클러스터를 구성하기 위한) 사전준비 목록
@@ -57,8 +79,10 @@ chap08 쿠버네티스 실습환경 구축
 					: 설정 전엔 죄다 IP주소(enp0s3의 inet값)가 10.0.2.4(myserver02의 IP주소)인 상태
 					: 쿠버네티스 클러스터를 구성하기 위해서는 세 가상머신 모드 IP 주소가 달라야되므로, 서로 다른 IP주소를 가지도록 설정
 
-					1. yaml 파일 작성
+					1. /etc/netplan 에 00-installer-config.yaml 파일 작성
 						: 교재대로하면 에러나고 이거 참고해서 해야됨>> https://betwe.tistory.com/entry/Ubuntu-netplan-%EC%9D%84-%EC%9D%B4%EC%9A%A9%ED%95%9C-IP-%EB%B3%80%EA%B2%BD
+
+						: myserver03에선>> 
 
 network:
   ethernets:
@@ -73,12 +97,67 @@ network:
           - 8.8.8.8
   version: 2
 
+						: myserver04에선>>
+
+network:
+  ethernets:
+    enp0s3:
+      addresses:
+        - 10.0.2.5/24
+      routes:
+        - to: default
+          via: 10.0.2.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+  version: 2
+
+					2. ifconfig해서 제대로 반영됬나 확인해보기 >> 각각 enp0s3 가 10.0.2.5/24, 10.0.2.6/24 으로 잘 나옴
 
 
-					2. 
-					3. 
+				(3) /etc/hosts 파일 커스텀
+					: 가상 머신간 도메인 네임을 통한 통신을 가능하게 하기 위해, 각 호스트의 /etc/hosts 로 각 가상머신의 private IP를 특정도메인네임과 바인딩해놓는다
+
+					: 참고로 수정 전 hosts 파일(=myserver02의 hosts 파일)은 아래와 같음 
+
+							127.0.0.1 localhost
+							127.0.1.1 myserver02
+
+							# The following lines are desirable for IPv6 capable hosts
+							::1     ip6-localhost ip6-loopback
+							fe00::0 ip6-localnet
+							ff00::0 ip6-mcastprefix
+							ff02::1 ip6-allnodes
+							ff02::2 ip6-allrouters
+
+
+
+					1. myserver03의 설정 수정
+						(1) /etc/hosts 수정 
+							127.0.0.1 localhost
+							127.0.1.1 myserver03
+
+							10.0.2.4 myserver02
+							10.0.2.5 myserver03
+							10.0.2.6 myserver04
+
+							# The following lines are desirable for IPv6 capable hosts
+							::1     ip6-localhost ip6-loopback
+							fe00::0 ip6-localnet
+							ff00::0 ip6-mcastprefix
+							ff02::1 ip6-allnodes
+							ff02::2 ip6-allrouters
+
+
+ 						(2) 제대로 반영됬나 확인
+							1. ping myserver02
+							2. ping myserver04
+
+						(3)
+							: https://blog.acronym.co.kr/480
+
+
 
 		3. 네트워크 설정 및 swap 설정
-
 
 
