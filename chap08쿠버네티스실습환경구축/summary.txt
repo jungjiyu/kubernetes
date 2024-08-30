@@ -20,10 +20,24 @@ chap08 쿠버네티스 실습환경 구축
 
 
 
+UFW Uncomplicated FireWall >> 리눅스 운영체제에서 작동하는 방화벽
+네트워크 드라이버  >>특정 네트워크 구조를 구현/관리하는 데 사용되는 도구
+	ex ) docker 의 bridge , host, overlay 네트워크 드라이버
+	ex ) kubernetes 의 overlay 네트워크 드라이버
 
 
 
+전반적으로 자주 쓰이는 명령어
+	: 명령어 권한 획득 >> sudo -i
 
+
+
+쿠버네티스에서의 오버레이 네트워크(= 서로 다른 host 의 pod 들을 동일한 네트워크에 존재하는 것처럼 만듦) 
+    : 구축 방법
+	:  overlay 네트워크 드라이버와  CNI 플러그인은 서로 독립적인 존재이다. (CNI 플러그인이 Overlay 네트워크를 구현할 때 반드시 Overlay 네트워크 드라이버를 내부적으로 사용하거나, Overlay 네트워크 드라이버가 CNI 플러그인을 사용해야 하는 것이 님)
+	: 도커 환경에선 오버레이 네트워크의 구축을 위해 보통 overlay 네트워크 드라이버를, 쿠버네티스 환경에서는 오버레이 네트워크의 구축을 위해 CNI 플러그인을 주로 사용한다.
+	sol1. overlay 네트워크 드라이버
+******sol2. CNI 플러그인
 
 8.1 쿠버네티스 설치전 사전준비
 	: 쿠버네티스는 실습환경을 사전 구축한 후에 설치해야한다. 안그럼 설치에 실패할 수도..
@@ -131,8 +145,26 @@ network:
 							ff02::2 ip6-allrouters
 
 
+					1. myserver02의 설정 수정
+						: myserver02 에서도 도메인 네임을 통해 myserver03, myserver04 와의 통신을 할 수 있도록 수정한다
 
-					1. myserver03의 설정 수정
+							127.0.0.1 localhost
+							127.0.1.1 myserver02
+
+							10.0.2.4 myserver02
+							10.0.2.5 myserver03
+							10.0.2.6 myserver04
+
+							# The following lines are desirable for IPv6 capable hosts
+							::1     ip6-localhost ip6-loopback
+							fe00::0 ip6-localnet
+							ff00::0 ip6-mcastprefix
+							ff02::1 ip6-allnodes
+							ff02::2 ip6-allrouters
+
+
+
+					2. myserver03의 설정 수정
 						(1) /etc/hosts 수정 
 							127.0.0.1 localhost
 							127.0.1.1 myserver03
@@ -150,14 +182,108 @@ network:
 
 
  						(2) 제대로 반영됬나 확인
-							1. ping myserver02
-							2. ping myserver04
+						     1. ping 날려보기 
+							    : destination host unreachable 안나오고 64 bytes from .. icmp_seq =.. 같은거 찍히면 정상적인 거임
+							(1) ping myserver02
+							(2) ping myserver04
 
-						(3)
-							: https://blog.acronym.co.kr/480
+						     2. ssh 접속해보기
+							(1) ssh myserver02
+								: https://blog.acronym.co.kr/480
+
+							(2) ssh myserver04
+
+
+
+					3. myserver04의 설정 수정
+						(1) /etc/hosts 수정 
+							127.0.0.1 localhost
+							127.0.1.1 myserver04
+
+							10.0.2.4 myserver02
+							10.0.2.5 myserver03
+							10.0.2.6 myserver04
+
+							# The following lines are desirable for IPv6 capable hosts
+							::1     ip6-localhost ip6-loopback
+							fe00::0 ip6-localnet
+							ff00::0 ip6-mcastprefix
+							ff02::1 ip6-allnodes
+							ff02::2 ip6-allrouters
+
+
+ 						(2) 제대로 반영됬나 확인
+						     1. ping 날려보기 
+							(1) ping myserver02
+							(2) ping myserver03
+
+						     2. ssh 접속해보기
+							(1) ssh myserver02
+							(2) ssh myserver03
+
+
+
+				(4) UFW 방화벽 설정
+					: 쿠버네티스의 각 노드별로 포트 통신을 원활하게 하기 위해 기존에 사용하던 ufw를 정지시켜야됨.
+					: myserver02, myserver03, myserver04 의 방화벽 정지 하는 법
+						(1)  방화벽 상태 확인 >> sudo ufs status 
+							: 결과로 "Status: inactive" 출력되면, 방화벽이 작동안하고 있는거라 별도의 정지 처리 과정을 안해줘도 됨. ( "Status: inactive" 출력되면 별도의 정지 처리 과정 필요 ) 
+								: 실습에서는 다 "Status: inactive" 상태라 별도의 정
+	
+						(2)  ( "Status: inactive" 출력된 경우) ufw 정지시키기 >> sudo ufw disable
+
+
+
+				(5) 네트워크 설정
+					1. IPv4 를 포워딩
+					    : IPv4 를 포워딩하여 iptables 가 연결된 트래픽을 볼 수 있게 함
+						(1) 루트 권한 획득 >> sudo -i 
+						(2) 파일 작성 >> 
+							1. cat << EOF | sudo tee /etc/modules-load.d/k8s.conf 
+							    : 여러줄로 입력받은 내용을  /etc/modules-load.d/k8s.conf 
+에 저장시키도록 하겠다
+								: cat <<EOF 명령어 >> EOF(End of File) 문자열 전까지 입력된 내용을 표준 출력(stdout)으로 보냄.
+								: tee 명령어  >>표준 입력(stdin)으로 전달된 내용을 특정 파일( tee바로 뒤 명시된 파일)에 쓰는 명령어. 
+
+								: | (파이프) >> 앞에서 출력된 내용을 뒤의 명령어로 전달
+
+							2. overlay 네트워크 드라이버 >> overlay	
+								: 주의 ) overlay 라는 용어는 여러 컨텍스트(분야)에서 사용되고, 교재 실습에서의 overlay 는 네트워크 컨텍스트에서의 overlay (네트워크 드라이버)이다.
+
+
+								: overlay >>  리눅스 커널의 네트워크 드라이버 
+									: 서로 다른 host 에 존재하는 pod 간의 네트워크 연결을 가능하게 함
+										: 즉, overlay network 의 구성을 가능하게 해준다
+											: 그러니까 서로 다른 호스트의 pod 들을 동일한 네트워크에 있는 것처럼 할 수 있다
+
+									: 주의 >> CNI 플러그인과 overlay 네트워크 드라이버는 서로 별개이다.
+										: 둘다 overlay 네트워크를 구축하는데 쓰일 수 있는데, 서로를 필요로 하진 않는다.(CNI 플러그인이 Overlay 네트워크를 구현할 때 반드시 Overlay 네트워크 드라이버를 내부적으로 사용하거나, Overlay 네트워크 드라이버가 CNI 플러그인을 사용해야 하는 것은 아님)
+
+
+							3. br_netfilter 모듈 >> br_netfilter 
+								:  br_netfilter  >> 네트워크 필터링(패킷 처리) 관련 모듈
+									: iptables/netfilter 규칙의 적용을 가능하게함
+										: 그러니까 컨테이너와 호스트 간의 인터페이스 등에서 발생하는 트래픽에 대한 규칙을 적용 가능하게 함
+
+
+							4. cat 명령어를 종료 >> EOF
+								:  EOF 입력과 함께 cat 명령어가 종료되고, 앞서 입력한 내용이 /etc/modules-load.d/k8s.conf 파일에 기록됨
+
+							
+						(2) Linux 커널 모듈을 수동으로 로드 
+						  	  : modprobe >> 리눅스 커널 모듈 관리 도구 
+								: 특정 모듈을 로드/제거 가능
+
+							1. overlay 모듈을 커널에 로드 >>  sudo modprobe overlay
+							2. br_netfilter 모듈을 커널에 로드 >> sudo modprobe br_netfilter 
+
+
+						(3) 또다른 파일 작성 
+							1. cat << EOF | sudo tee /etc/sysctl.d/k8s.conf 
+
+
 
 
 
 		3. 네트워크 설정 및 swap 설정
-
 
