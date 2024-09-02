@@ -66,6 +66,23 @@ Linux 설정 관련
 
 
 
+컨테이너 런타임 >> 컨테이너를 실행/관리하는 소프트웨어
+	: 컨테이너의 생성, 실행, 중지, 삭제 등의 작업을 수행
+	: 종류
+		1. Low-level . 하위 런타임<< 기본적인. 저수준.
+			: runc >> 가장 기본적인 컨테이너 런타임으로, OCI(Open Container Initiative) 표준을 구현
+				:  Docker와 containerd 등의 High-level 컨테이너 런타임에서 활용됨
+			
+		2. High-level. 상위 런타임 << 복잡한. 고수준.
+		 	: containerd >> Docker에서 파생된 고성능 컨테이너 런타임으로, 컨테이너의 수명 주기를 관리하는 모든 기능을 제공. 
+				: 쿠버네티스에서도 많이 사용됨
+
+			: CRI-O >> Kubernetes에서 OCI 표준을 준수하는 컨테이너 런타임
+				: Kubernetes와의 통합을 위해 설계됨
+
+	: Docker 와 Container Runtime		
+		: Docker는 
+
 
 
 8.1 쿠버네티스 설치전 사전준비
@@ -352,6 +369,18 @@ network:
 
 						(4)설정 파일 내용 반영
 
+
+					2. containerd 를 설정
+						: containerd >> 컨테이너 런타임.  컨테이너의 실행, 이미지 관리, 네트워크, 스냅샷 관리 등을 효율적으로 처리함.
+							: Docker에서 파생되었고, 현재는 CNCF Cloud Native Computing Foundation 의 주요 프로젝트 중 하나로 관리되고 있음
+							: Kubernetes와 같은 컨테이너 오케스트레이션 시스템에서 널리 사용됨
+							: 컨테이너의 수명 주기를 관리하는 데 필요한 모든 기능을 제공					
+
+						: containerd와 Docker	
+							: Docker는 containerd를 기반으로 하여 동작
+								: Docker는 containerd의 상위 레이어에서 동작하며, containerd를 통해 컨테이너 실행, 이미지 관리 등의 핵심 기능을 수행함. 
+
+							: 
 
 		3. 네트워크 설정 및 swap 설정
 
