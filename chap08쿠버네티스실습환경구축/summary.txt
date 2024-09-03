@@ -35,6 +35,9 @@ UFW Uncomplicated FireWall >> 리눅스 운영체제에서 작동하는 방화�
 Linux 설정 관련
     주요 디렉터리
 	: 해당 디렉터리 아래 정의된 *.conf 파일은 해당 디렉터리의 기능(?)에 대한 설정 파일로 간주된다
+	: 표준 디렉터리와 사용자 정의 디렉터리
+		: 표준 디렉터리 >> 시스템 설치 시나 특정 패키지를 설치할 때 자동으로 생성됨
+		: 사용자 정의 디렉터리 >> 
 	1. /etc/modules-load.d 디렉터리 >>  Linux 시스템에서 "커널 모듈"을 자동으로 로드하기 위한 설정 디렉터리
 		: Linux 커널 모듈 >> 시스템의 하드웨어나 소프트웨어 기능을 확장하기 위해 동적으로 로드될 수 있는 작은 코드 조각
 
@@ -66,6 +69,14 @@ Linux 설정 관련
 
 
 
+
+Cloud Native Computing Foundation CNCF >> 클라우드 네이티브 기술의 발전과 표준화를 촉진하기 위해 설립된 오픈소스 소프트웨어 재단
+	: 클라우드 네이티브 기술 >>클라우드 환경에서 최적화된 애플리케이션을 설계/개발/배포/운영하는 기술
+	: 클라우드 네이티브 애플리케이션을 구축하고 운영하기 위한 주요 기술/프로젝트들을 관리하고 지원
+ 		: Kubernetes, Prometheus, containerd, Helm 등을 관리
+
+
+
 컨테이너 런타임 >> 컨테이너를 실행/관리하는 소프트웨어
 	: 컨테이너의 생성, 실행, 중지, 삭제 등의 작업을 수행
 	: 종류
@@ -73,16 +84,17 @@ Linux 설정 관련
 			: runc >> 가장 기본적인 컨테이너 런타임으로, OCI(Open Container Initiative) 표준을 구현
 				:  Docker와 containerd 등의 High-level 컨테이너 런타임에서 활용됨
 			
-		2. High-level. 상위 런타임 << 복잡한. 고수준.
-		 	: containerd >> Docker에서 파생된 고성능 컨테이너 런타임으로, 컨테이너의 수명 주기를 관리하는 모든 기능을 제공. 
-				: 쿠버네티스에서도 많이 사용됨
+		2. High-level. 상위 런타임 <<  하위 컨테이너 런타임과 다른 상위 컨테이너 런타임을 활용하여 구현된 소프트웨어. (복잡한. 고수준) 
+		 	: containerd >> Docker에서 파생된, 그렇지만 Docker와는 독립적인, 고성능 컨테이너 런타임으로, 컨테이너의 수명 주기를 관리하는 모든 기능을 제공. 
+				: "Docker에서 파생" >> ( Docker 와 별개로 이전부터 존재했던게 아니라 ) Docker 에서  (핵심 컨테이너 관리 기능을 분리를) 필요로 해서 개발된 것이란 것.
+				: "Docker와는 독립적" >> Docker 뿐 아니라 Kubernetes와 같은 다른 시스템에서도 사용 가능
+					: containerd가 탄생한 건 Docker 때문이긴 해도, ( 2017년 ) Docker는 containerd를 오픈소스로 독립시키고, Cloud Native Computing Foundation(CNCF)에 기부했다
 
 			: CRI-O >> Kubernetes에서 OCI 표준을 준수하는 컨테이너 런타임
 				: Kubernetes와의 통합을 위해 설계됨
 
-	: Docker 와 Container Runtime		
-		: Docker는 
-
+			: Docker >> containerd와 runc를 활용하여 컨테이너 관리 기능을 제공. 따라서 얘도 상위 컨테이너 런타임. 
+		
 
 
 8.1 쿠버네티스 설치전 사전준비
@@ -372,15 +384,9 @@ network:
 
 					2. containerd 를 설정
 						: containerd >> 컨테이너 런타임.  컨테이너의 실행, 이미지 관리, 네트워크, 스냅샷 관리 등을 효율적으로 처리함.
-							: Docker에서 파생되었고, 현재는 CNCF Cloud Native Computing Foundation 의 주요 프로젝트 중 하나로 관리되고 있음
-							: Kubernetes와 같은 컨테이너 오케스트레이션 시스템에서 널리 사용됨
-							: 컨테이너의 수명 주기를 관리하는 데 필요한 모든 기능을 제공					
 
-						: containerd와 Docker	
-							: Docker는 containerd를 기반으로 하여 동작
-								: Docker는 containerd의 상위 레이어에서 동작하며, containerd를 통해 컨테이너 실행, 이미지 관리 등의 핵심 기능을 수행함. 
+						(1) sudo mkdir -p /etc/containerd >> containerd의 설정 파일을 보관하기 위한 디렉터리 생성
+							: -p 옵션 >>  이 옵션은 지정한 경로에 상위 디렉토리가 존재하지 않을 경우 상위 디렉터리도 함께 생성
 
-							: 
 
 		3. 네트워크 설정 및 swap 설정
-
