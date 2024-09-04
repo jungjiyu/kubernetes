@@ -437,23 +437,23 @@ disabled_plugins = ["cri"]
 # level = "info"
 
 
-						    1. 파일 수정
-							: 교재에서의 containerd 와의 버전이 달라서 그런건진 몰라도 아예 SystemCGroup 에 대한 정의가 안되있어서 아예 직접 추가해줬다
+						    (4) 파일 수정
+							0. 교재에서의 containerd 와의 버전이 달라서 그런건진 몰라도 아예 SystemCGroup 에 대한 정의가 안되있어서 아예 직접 추가해줬다
 						    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
 						      SystemdCgroup = true
 
 
-						    2. sudo systemctl restart containerd >> containerd 서비스를 재시작합니다.
-							: 설정 파일이 수정된 후 서비스를 재적용할 때나, 서비스에 문제가 있을 때 주로 사용
-							: containerd 서비스가 이미 실행 중이더라도, 서비스를 중지한 다음 다시 시작
+						    	1. sudo systemctl restart containerd >> containerd 서비스를 재시작합니다.	
+								: 설정 파일이 수정된 후 서비스를 재적용할 때나, 서비스에 문제가 있을 때 주로 사용
+								: containerd 서비스가 이미 실행 중이더라도, 서비스를 중지한 다음 다시 시작
 
 
 
-						    3. sudo systemctl enable containerd >>(시스템이 부팅될 때마다) containerd 서비스를 자동으로 시작되도록 설정
+						   	2. sudo systemctl enable containerd >>(시스템이 부팅될 때마다) containerd 서비스를 자동으로 시작되도록 설정
 
 
-						    4. sudo systemctl status containerd >> containerd 서비스의 상태를 확인
-							: 초록색으로 active 나오면 정상적인 것
+						    	3. sudo systemctl status containerd >> containerd 서비스의 상태를 확인
+								: 초록색으로 active 나오면 정상적인 것
 
 
 
